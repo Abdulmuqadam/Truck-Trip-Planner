@@ -42,6 +42,7 @@ class RoutingService:
                 'duration_hours': round(route['duration'] / 3600, 1),
                 'duration_minutes': round(route['duration'] / 60),
                 'geometry': route['geometry'],
+                'legs': self._legs(route['legs']),
                 'steps': self._steps(route['legs']),
             }
         except (KeyError, IndexError, TypeError, ValueError) as exc:
@@ -60,6 +61,21 @@ class RoutingService:
                     'location': maneuver.get('location'),
                 })
         return steps
+
+    @staticmethod
+    def _legs(legs):
+        route_legs = []
+        waypoint_names = ('current', 'pickup', 'dropoff')
+        for index, leg in enumerate(legs):
+            if index >= len(waypoint_names) - 1:
+                break
+            route_legs.append({
+                'from': waypoint_names[index],
+                'to': waypoint_names[index + 1],
+                'distance_miles': round(leg['distance'] / 1609.344, 1),
+                'duration_hours': round(leg['duration'] / 3600, 2),
+            })
+        return route_legs
 
     @staticmethod
     def _instruction(step, maneuver):

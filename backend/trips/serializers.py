@@ -14,3 +14,4 @@ class TripPlanResponseSerializer(serializers.Serializer):
     trip = TripPlanSerializer()
     locations = serializers.DictField()
     route = serializers.DictField()
+    hos = serializers.DictField()

@@ -22,6 +22,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'drf_spectacular',
     'corsheaders',
     'rest_framework',
     'trips',
@@ -51,14 +52,19 @@ CORS_ALLOWED_ORIGINS = [
 NOMINATIM_BASE_URL = config(
     "NOMINATIM_BASE_URL", default="https://nominatim.openstreetmap.org/search"
 )
+
 NOMINATIM_USER_AGENT = config(
     "NOMINATIM_USER_AGENT", default="spotter-ai-trip-planner/1.0"
 )
+
 NOMINATIM_TIMEOUT = config("NOMINATIM_TIMEOUT", default=5, cast=int)
+
 GEOCODING_CACHE_TTL = config("GEOCODING_CACHE_TTL", default=86400, cast=int)
+
 OSRM_BASE_URL = config(
     "OSRM_BASE_URL", default="https://router.project-osrm.org"
 )
+
 OSRM_TIMEOUT = config("OSRM_TIMEOUT", default=10, cast=int)
 
 REST_FRAMEWORK = {
@@ -68,6 +74,14 @@ REST_FRAMEWORK = {
     "DEFAULT_PARSER_CLASSES": [
         "rest_framework.parsers.JSONParser",
     ],
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+}
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "Trip Planner API",
+    "DESCRIPTION": "API for planning trips with geocoding, routing, and Hours of Service (HOS) compliance.",
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
 }
 
 TEMPLATES = [

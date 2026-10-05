@@ -1,9 +1,11 @@
 import json
+from datetime import datetime, timezone
 from unittest.mock import patch
 
 from django.test import TestCase
 
 from trips.services.geocoding import GeocodingError, LocationNotFoundError
+from .services.hos import HOSPlanner
 from trips.services.routing import RoutingError, RoutingService
 
 
@@ -48,6 +50,8 @@ class RoutingServiceTests(TestCase):
                 'duration': 7200,
                 'geometry': {'type': 'LineString', 'coordinates': [[-87.6, 41.8]]},
                 'legs': [{
+                    'distance': 16093.44,
+                    'duration': 7200,
                     'steps': [{
                         'distance': 1609.344,
                         'duration': 300,
@@ -74,10 +78,60 @@ class RoutingServiceTests(TestCase):
         self.assertEqual(route['steps'][0]['instruction'], 'Turn right onto Main Street')
 
 
+class HOSPlannerTests(TestCase):
+    def setUp(self):
+        self.trip = {
+            'departure_at': datetime(2026, 10, 5, 8, tzinfo=timezone.utc),
+            'current_cycle_used': 12,
+        }
+
+    def test_inserts_break_after_eight_driving_hours(self):
+        route = {
+            'distance_miles': 800,
+            'legs': [
+                {'from': 'current', 'to': 'pickup', 'distance_miles': 400, 'duration_hours': 8},
+                {'from': 'pickup', 'to': 'dropoff', 'distance_miles': 400, 'duration_hours': 8},
+            ],
+        }
+
+        result = HOSPlanner().plan(self.trip, route)
+
+        self.assertIn('30_minute_break', [event['activity'] for event in result['events']])
+
+    def test_inserts_fuel_stop_before_one_thousand_miles(self):
+        route = {
+            'distance_miles': 1600,
+            'legs': [
+                {'from': 'current', 'to': 'pickup', 'distance_miles': 800, 'duration_hours': 12},
+                {'from': 'pickup', 'to': 'dropoff', 'distance_miles': 800, 'duration_hours': 12},
+            ],
+        }
+
+        result = HOSPlanner().plan(self.trip, route)
+
+        self.assertIn('fuel', [event['activity'] for event in result['events']])
+        self.assertGreaterEqual(len(result['daily_logs']), 2)
+
+    def test_restarts_cycle_when_remaining_hours_are_exhausted(self):
+        trip = {**self.trip, 'current_cycle_used': 69}
+        route = {
+            'distance_miles': 100,
+            'legs': [
+                {'from': 'current', 'to': 'pickup', 'distance_miles': 50, 'duration_hours': 1},
+                {'from': 'pickup', 'to': 'dropoff', 'distance_miles': 50, 'duration_hours': 1},
+            ],
+        }
+
+        result = HOSPlanner().plan(trip, route)
+
+        self.assertIn('34_hour_restart', [event['activity'] for event in result['events']])
+
+
 class TripPlanViewTests(TestCase):
     @patch('trips.views.GeocodingService.geocode_trip')
     @patch('trips.views.RoutingService.calculate_route')
-    def test_valid_trip_request_returns_planned_trip(self, calculate_route, geocode_trip):
+    @patch('trips.views.HOSPlanner.plan')
+    def test_valid_trip_request_returns_planned_trip(self, plan, calculate_route, geocode_trip):
         geocode_trip.return_value = {
             'current': {
                 'display_name': 'Chicago, Illinois',
@@ -100,7 +154,14 @@ class TripPlanViewTests(TestCase):
             'duration_hours': 21.8,
             'duration_minutes': 1308,
             'geometry': {'type': 'LineString', 'coordinates': []},
+            'legs': [],
             'steps': [],
+        }
+        plan.return_value = {
+            'summary': {},
+            'events': [],
+            'daily_logs': [],
+            'route_distance_miles': 1375.4,
         }
 
         response = self.client.post(
@@ -116,6 +177,7 @@ class TripPlanViewTests(TestCase):
         )
         self.assertEqual(response.json()['locations']['current']['latitude'], 41.8781)
         self.assertEqual(response.json()['route']['distance_miles'], 1375.4)
+        self.assertEqual(response.json()['hos']['daily_logs'], [])
 
     @patch('trips.views.GeocodingService.geocode_trip')
     def test_unknown_location_returns_bad_request(self, geocode_trip):
