@@ -10,9 +10,9 @@ from trips.services.routing import RoutingError, RoutingService
 
 
 VALID_TRIP = {
-    'current_location': 'Chicago, IL',
-    'pickup_location': 'Dallas, TX',
-    'dropoff_location': 'Phoenix, AZ',
+    'current_location': 'Buffalo, NY',
+    'pickup_location': 'Yonkers, NY',
+    'dropoff_location': 'Seattle, WA',
     'departure_at': '2026-10-05T08:00:00Z',
     'current_cycle_used': 12,
 }
