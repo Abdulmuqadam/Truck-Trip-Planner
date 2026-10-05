@@ -48,6 +48,19 @@ CORS_ALLOWED_ORIGINS = [
     if origin.strip()
 ]
 
+NOMINATIM_BASE_URL = config(
+    "NOMINATIM_BASE_URL", default="https://nominatim.openstreetmap.org/search"
+)
+NOMINATIM_USER_AGENT = config(
+    "NOMINATIM_USER_AGENT", default="spotter-ai-trip-planner/1.0"
+)
+NOMINATIM_TIMEOUT = config("NOMINATIM_TIMEOUT", default=5, cast=int)
+GEOCODING_CACHE_TTL = config("GEOCODING_CACHE_TTL", default=86400, cast=int)
+OSRM_BASE_URL = config(
+    "OSRM_BASE_URL", default="https://router.project-osrm.org"
+)
+OSRM_TIMEOUT = config("OSRM_TIMEOUT", default=10, cast=int)
+
 REST_FRAMEWORK = {
     "DEFAULT_RENDERER_CLASSES": [
         "rest_framework.renderers.JSONRenderer",
