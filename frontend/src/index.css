@@ -43,4 +43,20 @@ input {
     background: #fff;
     box-shadow: 0 0 0 3px rgb(16 185 129 / 0.14);
   }
+
+  .route-stop-marker {
+    display: grid;
+    place-items: center;
+    background: transparent;
+    border: 0;
+  }
+
+  .route-stop-marker span {
+    display: block;
+    width: 18px;
+    height: 18px;
+    border: 3px solid #fff;
+    border-radius: 999px;
+    box-shadow: 0 2px 6px rgb(15 23 42 / 0.28);
+  }
 }

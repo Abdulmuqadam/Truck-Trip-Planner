@@ -25,5 +25,10 @@ export function useTripPlanner() {
     }
   }
 
-  return { result, loading, error, submitTrip }
+  const startNewTrip = () => {
+    setResult(null)
+    setError('')
+  }
+
+  return { result, loading, error, submitTrip, startNewTrip }
 }
